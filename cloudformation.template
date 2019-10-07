@@ -1,0 +1,120 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Launch Forward Proxy
+
+
+Resources:
+  LambdaCloudTrailRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal: 
+              Service:
+                - "lambda.amazonaws.com" 
+            Action: 
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "root"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - ssm:GetParameters
+                  - ssm:GetParameter
+                Resource: "*"
+  ComplianceEnforcerBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketName:
+        Fn::Join: 
+        - ""
+        - - 'compliance-enforcer-'
+          - !Ref AWS::Region
+          - '-'
+          - !Ref AWS::AccountId
+  ComplianceEnforcerBucketPolicy: 
+    Type: AWS::S3::BucketPolicy
+    Properties: 
+      Bucket: 
+        Fn::Join: 
+        - ""
+        - - 'compliance-enforcer-'
+          - !Ref AWS::Region
+          - '-'
+          - !Ref AWS::AccountId
+      PolicyDocument: 
+        Statement: 
+          - 
+            Action: 
+              - "s3:GetBucketAcl"
+            Effect: "Allow"
+            Resource: 
+              Fn::Join: 
+                - ""
+                - 
+                  - "arn:aws:s3:::"
+                  - 
+                    Fn::Join: 
+                    - ""
+                    - - 'compliance-enforcer-'
+                      - !Ref AWS::Region
+                      - '-'
+                      - !Ref AWS::AccountId
+                  - "/*"
+            Principal:
+              Service: cloudtrail.amazonaws.com
+          - 
+            Action: 
+              - "s3:PutObject"
+            Effect: "Allow"
+            Resource: 
+              Fn::Join: 
+                - ""
+                - 
+                  - "arn:aws:s3:::"
+                  - 
+                    Fn::Join: 
+                    - ""
+                    - - 'compliance-enforcer-'
+                      - !Ref AWS::Region
+                      - '-'
+                      - !Ref AWS::AccountId
+                  - "/AWSLogs/*"
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Condition: 
+              StringEquals: 
+                s3:x-amz-acl: bucket-owner-full-control 
+  ComplianceEnforcerSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties: 
+      DisplayName: ComplianceEnforcer
+      TopicName: ComplianceEnforcer
+  ComplianceEnforcerTrail:
+    Type: AWS::CloudTrail::Trail
+    Properties: 
+      EnableLogFileValidation: False
+      IsLogging: True
+      S3BucketName:
+        Fn::Join: 
+        - ""
+        - - 'compliance-enforcer-'
+          - !Ref AWS::Region
+          - '-'
+          - !Ref AWS::AccountId
+      SnsTopicName:
+        Fn::GetAtt:
+          - "ComplianceEnforcerSNSTopic"
+          - "TopicName"
+      TrailName: ComplianceEnforcer
+    DependsOn: ComplianceEnforcerBucketPolicy
