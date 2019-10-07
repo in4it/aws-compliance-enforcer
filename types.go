@@ -6,6 +6,11 @@ type EventResponse struct {
 	Message string `json:"message"`
 }
 
+type SNSEvent struct {
+	S3Bucket    string   `json:"s3Bucket"`
+	S3ObjectKey []string `json:"s3ObjectKey"`
+}
+
 type Event struct {
 	EventRecord []EventRecord `json:"records" binding:"required"`
 }

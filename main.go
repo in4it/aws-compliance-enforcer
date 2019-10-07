@@ -42,7 +42,7 @@ func main() {
 	lambda.Start(handler)
 }
 
-func handler(context context.Context, request Event) (EventResponse, error) {
+func handler(context context.Context, request SNSEvent) (EventResponse, error) {
 	Info.Printf("Input: %+v", request)
 	return EventResponse{Message: "Done"}, nil
 }
