@@ -1,9 +1,20 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Launch Compliance Enforcer
 
+Parameters:
+  LambdaScriptBucket:
+    Type: String
+    Description: s3 bucket name of the lambda script to execute
+    Default: lambda-scripts-region-accountid
+  LambdaScriptBucketKey:
+    Type: String
+    Description: s3 key of the lambda script to execute
+    Default: compliance-enforcer/main.zip
+
+
 
 Resources:
-  LambdaCloudTrailRole:
+  LambdaExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
@@ -27,10 +38,23 @@ Resources:
                 Effect: "Allow"
                 Action:
                   - logs:CreateLogStream
+                  - logs:CreateLogGroup
+                  - logs:DescribeLogStreams
                   - logs:PutLogEvents
-                  - ssm:GetParameters
-                  - ssm:GetParameter
+                Resource:
+                  - "arn:aws:logs:*:*:log-group:/aws/lambda/compliance-enforcer"
+                  - "arn:aws:logs:*:*:log-group:/aws/lambda/compliance-enforcer:log-stream:*"
+              -
+                Effect: "Allow"
+                Action:
+                  - ec2:RevokeSecurityGroupIngress
                 Resource: "*"
+              -
+                Effect: "Allow"
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub '${ComplianceEnforcerBucket.Arn}/*'
   ComplianceEnforcerBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -101,4 +125,39 @@ Resources:
           - "ComplianceEnforcerSNSTopic"
           - "TopicName"
       TrailName: ComplianceEnforcer
-    DependsOn: ComplianceEnforcerBucketPolicy
+    DependsOn: 
+      - ComplianceEnforcerBucketPolicy
+      - LambdaInvokePermission
+  LambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      FunctionName: compliance-enforcer
+      Handler: "main"
+      Role: 
+        Fn::GetAtt: 
+          - "LambdaExecutionRole"
+          - "Arn"
+      Code: 
+        S3Bucket: !Ref LambdaScriptBucket
+        S3Key: !Ref LambdaScriptBucketKey
+      Runtime: "go1.x"
+      Timeout: 30
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt 
+        - LambdaFunction
+        - Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref ComplianceEnforcerSNSTopic
+  LambdaSNSSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt 
+          - LambdaFunction
+          - Arn
+      Protocol: lambda
+      TopicArn: !Ref ComplianceEnforcerSNSTopic
+    DependsOn: 
+      - LambdaInvokePermission

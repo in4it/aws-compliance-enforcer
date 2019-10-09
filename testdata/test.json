@@ -1,0 +1,59 @@
+{
+    "eventVersion": "1.05",
+    "userIdentity": {
+        "type": "AssumedRole",
+        "principalId": "redacted",
+        "arn": "redacted",
+        "accountId": "redacted",
+        "accessKeyId": "redacted",
+        "sessionContext": {
+            "sessionIssuer": {
+                "type": "Role",
+                "principalId": "redacted",
+                "arn": "redacted",
+                "accountId": "redacted",
+                "userName": "admin"
+            },
+            "webIdFederationData": {},
+            "attributes": {
+                "mfaAuthenticated": "false",
+                "creationDate": "2019-10-09T11:57:13Z"
+            }
+        }
+    },
+    "eventTime": "2019-10-09T12:26:56Z",
+    "eventSource": "ec2.amazonaws.com",
+    "eventName": "AuthorizeSecurityGroupIngress",
+    "awsRegion": "eu-west-1",
+    "sourceIPAddress": "81.83.17.110",
+    "userAgent": "console.ec2.amazonaws.com",
+    "requestParameters": {
+        "groupId": "sg-05ffcaf1d3252d12d",
+        "ipPermissions": {
+            "items": [
+                {
+                    "ipProtocol": "-1",
+                    "groups": {},
+                    "ipRanges": {
+                        "items": [
+                            {
+                                "cidrIp": "0.0.0.0/0",
+                                "description": "test123"
+                            }
+                        ]
+                    },
+                    "ipv6Ranges": {},
+                    "prefixListIds": {}
+                }
+            ]
+        }
+    },
+    "responseElements": {
+        "requestId": "03c6ab1f-2c6e-4b9c-aca2-0343c4a4bc48",
+        "_return": true
+    },
+    "requestID": "03c6ab1f-2c6e-4b9c-aca2-0343c4a4bc48",
+    "eventID": "3b7d6a3a-4954-42d9-9448-535d5897adb9",
+    "eventType": "AwsApiCall",
+    "recipientAccountId": "redacted"
+}
